@@ -1,0 +1,6 @@
+/database/
+/node_modules/
+/dist/
+/.git/
+package-lock.json
+index.js

@@ -1,0 +1,32 @@
+{
+  "name": "@aoitelegram/database",
+  "version": "0.0.1",
+  "description": "A custom database designed specifically for aoitelegram",
+  "main": "./dist/index.js",
+  "typing": "./dist/index.d.ts",
+  "type": "commonjs",
+  "license": "MIT",
+  "files": [
+    "./dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "javascript",
+    "typescript",
+    "telegram",
+    "library",
+    "telegramapi",
+    "bot",
+    "aoi",
+    "aoitelegram",
+    "bds.js",
+    "@aoitelegram",
+    "aoi.js"
+  ],
+  "author": "Sempai<zadmanthegreat@gmail.com>",
+  "devDependencies": {
+    "@types/node": "^20.10.4"
+  }
+}
