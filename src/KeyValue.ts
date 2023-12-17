@@ -20,13 +20,19 @@ function at<T extends unknown[]>(arr: T, index: number) {
 }
 
 interface EventDataMap<K, V> {
+  create: {
+    tables: string[];
+    path: string;
+    extname: string;
+    key: K;
+    value: V | undefined;
+  };
   update: {
     tables: string[];
     path: string;
     extname: string;
     key: K;
     value: V | undefined;
-    encryption: boolean;
   };
   delete: {
     tables: string[];
@@ -41,10 +47,11 @@ interface EventDataMap<K, V> {
     extname: string;
     value: { K: V };
   };
-  ready: undefined;
+  ready: KeyValue<K, V>;
 }
 
 interface EventDataMap2<K, V> {
+  create: undefined;
   update: {
     tables: string[];
     path: string;
@@ -277,9 +284,12 @@ class KeyValue<K, V> extends EventEmitter {
       key,
       value: getValue,
     };
+    if (!this.has(table, key)) {
+      this.emit("create", newValue);
+    }
     this.#setTableData(table, this.path, db, this.extname);
-    return this;
     this.emit("update", newValue, oldValue);
+    return this;
   }
 
   /**

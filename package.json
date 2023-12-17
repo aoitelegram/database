@@ -1,6 +1,6 @@
 {
   "name": "@aoitelegram/database",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A custom database designed specifically for aoitelegram",
   "main": "./dist/index.js",
   "typing": "./dist/index.d.ts",
