@@ -287,8 +287,10 @@ class KeyValue<K, V> extends EventEmitter {
     if (!this.has(table, key)) {
       this.emit("create", newValue);
     }
+    if (this.has(table, key)) {
+      this.emit("update", newValue, oldValue);
+    }
     this.#setTableData(table, this.path, db, this.extname);
-    this.emit("update", newValue, oldValue);
     return this;
   }
 
