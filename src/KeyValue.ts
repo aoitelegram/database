@@ -1,19 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { EventEmitter } from "node:events";
-import { cipher, decoding } from "./Util";
 import { CustomError } from "./Error";
-
-function keys<T extends Object>(obj: T) {
-  if (typeof obj === "object") return Object.keys(obj);
-  else return [];
-}
-
-function valuess<T extends Object>(obj: T) {
-  if (typeof obj === "object") return Object.values(obj);
-  else return [];
-}
+import { cipher, decoding } from "./Util";
+import { EventEmitter } from "node:events";
 
 function at<T extends unknown[]>(arr: T, index: number) {
   return index >= 1 ? arr[index] : arr[arr.length + index];
@@ -21,47 +11,26 @@ function at<T extends unknown[]>(arr: T, index: number) {
 
 interface EventDataMap<K, V> {
   create: {
-    tables: string[];
-    path: string;
-    extname: string;
-    key: K;
-    value: V | undefined;
+    table: string;
+    variable: string;
+    data: V | undefined;
   };
   update: {
-    tables: string[];
-    path: string;
-    extname: string;
-    key: K;
-    value: V | undefined;
+    table: string;
+    variable: string;
+    newData: V | undefined;
+    oldData: V | undefined;
   };
   delete: {
-    tables: string[];
-    path: string;
-    extname: string;
-    key: K;
-    value: V | undefined;
+    table: string;
+    variable: string;
+    data: V | undefined;
   };
   deleteAll: {
-    tables: string[];
-    path: string;
-    extname: string;
-    value: { K: V };
+    table: string;
+    variables: { [key: string]: V }[];
   };
   ready: KeyValue<K, V>;
-}
-
-interface EventDataMap2<K, V> {
-  create: undefined;
-  update: {
-    tables: string[];
-    path: string;
-    extname: string;
-    key: K;
-    value: V | undefined;
-  };
-  delete: undefined;
-  deleteAll: undefined;
-  ready: undefined;
 }
 
 /**
@@ -88,10 +57,10 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Constructs a new KeyValue instance.
-   * @param {Object} options - Configuration options for KeyValue.
-   * @param {string} options.path - Path where the database is stored.
-   * @param {string[]} options.tables - Array of table names in the database.
-   * @param {string} options.extname - File extension for table storage files.
+   * @param  options - Configuration options for KeyValue.
+   * @param  options.path - Path where the database is stored.
+   * @param  options.tables - Array of table names in the database.
+   * @param  options.extname - File extension for table storage files.
    */
   constructor(
     options: {
@@ -124,32 +93,26 @@ class KeyValue<K, V> extends EventEmitter {
   /**
    * Adds an event listener for the specified event.
    * @template T - Type of event
-   * @param {T} event - Event name
-   * @param {Function} listener - Event listener function
-   * @returns {this} The current KeyValue instance
+   * @param  event - Event name
+   * @param  listener - Event listener function
+   * @returns  The current KeyValue instance
    * @override
    */
   on<T extends keyof EventDataMap<K, V>>(
     event: T,
-    listener: (
-      data: EventDataMap<K, V>[T],
-      data2: EventDataMap2<K, V>[T],
-    ) => void,
+    listener: (data: EventDataMap<K, V>[T]) => void,
   ): this;
 
   /**
    * Adds an event listener for the specified event.
-   * @param {string} event - Event name
-   * @param {Function} listener - Event listener function
-   * @returns {this} The current KeyValue instance
+   * @param  event - Event name
+   * @param  listener - Event listener function
+   * @returns  The current KeyValue instance
    * @override
    */
   on(
     event: keyof EventDataMap<K, V>,
-    listener: (
-      args1: EventDataMap<K, V>[typeof event],
-      args2: EventDataMap2<K, V>[typeof event],
-    ) => void,
+    listener: (args1: EventDataMap<K, V>[typeof event]) => void,
   ): this {
     super.on(event, listener);
     return this;
@@ -158,7 +121,7 @@ class KeyValue<K, V> extends EventEmitter {
   /**
    * Initializes a table by creating its storage file if it doesn't exist.
    * @private
-   * @param {string} table - Name of the table to initialize
+   * @param  table - Name of the table to initialize
    */
   #initializeTable(table: string) {
     const tablePath = path.join(process.cwd(), this.path, table);
@@ -178,10 +141,10 @@ class KeyValue<K, V> extends EventEmitter {
   /**
    * Retrieves data from a table storage file.
    * @private
-   * @param {string} tableName - Name of the table
-   * @param {string} directory - Directory where the table is stored
-   * @param {string} fileExtension - File extension for table storage files
-   * @returns {Object} The data stored in the table
+   * @param  tableName - Name of the table
+   * @param  directory - Directory where the table is stored
+   * @param  fileExtension - File extension for table storage files
+   * @returns  The data stored in the table
    */
   #getTableData(tableName: string, directory: string, fileExtension: string) {
     const filePath = path.join(
@@ -210,10 +173,10 @@ class KeyValue<K, V> extends EventEmitter {
   /**
    * Sets data for a specific key in a table.
    * @private
-   * @param {string} tableName - Name of the table
-   * @param {string} directory - Directory where the table is stored
-   * @param {unknown} data - Data to be set
-   * @param {string} fileExtension - File extension for table storage files
+   * @param  tableName - Name of the table
+   * @param  directory - Directory where the table is stored
+   * @param  data - Data to be set
+   * @param  fileExtension - File extension for table storage files
    */
   #setTableData(
     tableName: string,
@@ -245,8 +208,7 @@ class KeyValue<K, V> extends EventEmitter {
   /**
    * Checks if a table exists; throws an error if it doesn't.
    * @private
-   * @param {string} table - Name of the table to check
-   * @throws {CustomError} If the table doesn't exist
+   * @param  table - Name of the table to check
    */
   #hasTable(table: string) {
     if (!this.hasTable(table)) {
@@ -256,11 +218,10 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Sets a key-value pair in a specified table.
-   * @param {string} table - Name of the table
-   * @param {K} key - Key to set
-   * @param {V} value - Value to set
-   * @returns {this} The current KeyValue instance
-   * @emits {update} When a key-value pair is updated
+   * @param  table - Name of the table
+   * @param  key - Key to set
+   * @param  value - Value to set
+   * @returns  The current KeyValue instance
    */
   set(table: string, key: K, value: V) {
     this.#hasTable(table);
@@ -270,25 +231,22 @@ class KeyValue<K, V> extends EventEmitter {
       key,
       value,
     });
-    const newValue = {
-      tables: table,
-      path: this.path,
-      extname: this.extname,
-      key,
-      value,
+    const setValue = {
+      table,
+      variable: key,
+      newData: value,
+      oldData: getValue,
     };
-    const oldValue = {
-      tables: table,
-      path: this.path,
-      extname: this.extname,
-      key,
-      value: getValue,
+    const newValue = {
+      table,
+      variable: key,
+      data: value,
     };
     if (!this.has(table, key)) {
       this.emit("create", newValue);
     }
     if (this.has(table, key)) {
-      this.emit("update", newValue, oldValue);
+      this.emit("update", setValue);
     }
     this.#setTableData(table, this.path, db, this.extname);
     return this;
@@ -296,9 +254,9 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves the value associated with a key in a specified table.
-   * @param {string} table - Name of the table
-   * @param {K} key - Key to retrieve
-   * @returns {V | undefined} The value associated with the key, or undefined if not found
+   * @param  table - Name of the table
+   * @param  key - Key to retrieve
+   * @returns  The value associated with the key, or undefined if not found
    */
   get(table: string, key: K): V | undefined {
     this.#hasTable(table);
@@ -313,8 +271,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves all key-value pairs in a specified table.
-   * @param {string} table - Name of the table
-   * @returns {Object} All key-value pairs in the table
+   * @param  table - Name of the table
+   * @returns  All key-value pairs in the table
    */
   all(table: string): { K: V } {
     this.#hasTable(table);
@@ -324,20 +282,17 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Clears all key-value pairs in a specified table.
-   * @param {string} table - Name of the table
-   * @returns {this} The current KeyValue instance
-   * @emits {deleteAll} When all key-value pairs in the table are deleted
+   * @param  table - Name of the table
+   * @returns  The current KeyValue instance
    */
   delete(table: string, key: K, oldValues = false): void | V {
     this.#hasTable(table);
     let db = this.#getTableData(table, this.path, this.extname);
     let values = this.get(table, key);
     const oldValue = {
-      tables: table,
-      path: this.path,
-      extname: this.extname,
-      key: key,
-      value: values,
+      table,
+      variable: key,
+      data: values,
     };
     delete db[key];
     this.#setTableData(table, this.path, db, this.extname);
@@ -349,18 +304,15 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Clears all key-value pairs in a specified table.
-   * @param {string} table - Name of the table
-   * @returns {this} The current KeyValue instance
-   * @emits {deleteAll} When all key-value pairs in the table are deleted
+   * @param  table - Name of the table
+   * @returns  The current KeyValue instance
    */
   clear(table: string) {
     this.#hasTable(table);
     let db = {};
     const oldValue = {
-      tables: table,
-      path: this.path,
-      extname: this.extname,
-      value: this.all(table),
+      table,
+      variables: this.all(table),
     };
     this.#setTableData(table, this.path, db, this.extname);
     this.emit("deleteAll", oldValue);
@@ -369,9 +321,9 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Checks if a key exists in a specified table.
-   * @param {string} table - Name of the table
-   * @param {K} key - Key to check
-   * @returns {boolean} True if the key exists, false otherwise
+   * @param  table - Name of the table
+   * @param  key - Key to check
+   * @returns  True if the key exists, false otherwise
    */
   has(table: string, key: K) {
     this.#hasTable(table);
@@ -381,10 +333,13 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Iterates over all key-value pairs in a specified table and executes a callback function.
-   * @param {string} table - Name of the table
-   * @param {Function} callback - Callback function to execute for each key-value pair
+   * @param  table - Name of the table
+   * @param  callback - Callback function to execute for each key-value pair
    */
-  forEach(table: string, callback: (value: V, key: K, db: any) => void) {
+  forEach(
+    table: string,
+    callback: (value: V, key: K, db: { [key: string]: V }) => void,
+  ) {
     this.#hasTable(table);
     const db = this.#getTableData(table, this.path, this.extname);
     for (const key in db) {
@@ -395,11 +350,14 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves a specific key-value pair from a specified table.
-   * @param {string} table - Name of the table
-   * @param {K} key - Key to retrieve
-   * @returns {Object | undefined} The key-value pair, or undefined if not found
+   * @param  table - Name of the table
+   * @param  key - Key to retrieve
+   * @returns  The key-value pair, or undefined if not found
    */
-  filter(table: string, filterFn: (value: V, key: K, db: any) => boolean) {
+  filter(
+    table: string,
+    filterFn: (value: V, key: K, db: { [key: string]: V }) => boolean,
+  ) {
     this.#hasTable(table);
     const db = this.#getTableData(table, this.path, this.extname);
     const filteredEntries: [K, V][] = [];
@@ -416,9 +374,9 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves a specific key-value pair from a specified table.
-   * @param {string} table - Name of the table
-   * @param {K} key - Key to retrieve
-   * @returns {Object | undefined} The key-value pair, or undefined if not found
+   * @param  table - Name of the table
+   * @param  key - Key to retrieve
+   * @returns  The key-value pair, or undefined if not found
    */
   at(table: string, key: K): { K: V } | undefined {
     this.#hasTable(table);
@@ -437,8 +395,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves a random key-value pair from a specified table.
-   * @param {string} table - Name of the table
-   * @returns {V | undefined} A random value, or undefined if the table is empty
+   * @param  table - Name of the table
+   * @returns  A random value, or undefined if the table is empty
    */
   randomAt(table: string): V | undefined {
     this.#hasTable(table);
@@ -451,8 +409,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves all keys from a specified table.
-   * @param {string} table - Name of the table
-   * @returns {Array<K>} Array of keys in the table
+   * @param  table - Name of the table
+   * @returns  Array of keys in the table
    */
   keys(table: string) {
     this.#hasTable(table);
@@ -466,8 +424,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves all values from a specified table.
-   * @param {string} table - Name of the table
-   * @returns {Array<V>} Array of values in the table
+   * @param  table - Name of the table
+   * @returns  Array of values in the table
    */
   values(table: string) {
     this.#hasTable(table);
@@ -481,8 +439,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Retrieves the length of key-value pairs in a specified table.
-   * @param {string} table - Name of the table.
-   * @returns {{ key: number, value: number }} - Object containing key and value counts.
+   * @param  table - Name of the table.
+   * @returns Object containing key and value counts.
    */
   length(table: string) {
     const key = this.keys(table);
@@ -492,8 +450,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Checks if a table exists.
-   * @param {string} tableName - Name of the table to check.
-   * @returns {boolean} - True if the table exists, otherwise false.
+   * @param  tableName - Name of the table to check.
+   * @returns  - True if the table exists, otherwise false.
    */
   hasTable(tableName: string) {
     return this.tables.includes(tableName);
@@ -501,8 +459,8 @@ class KeyValue<K, V> extends EventEmitter {
 
   /**
    * Checks if a given string is a valid table name.
-   * @param {string} table - Name of the table to check.
-   * @returns {boolean} - True if it's a valid table, otherwise false.
+   * @param table - Name of the table to check.
+   * @returns  - True if it's a valid table, otherwise false.
    */
   isTable(table: string): boolean {
     return this.tables.find((a) => a === table) === undefined ? false : true;

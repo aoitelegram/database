@@ -3,6 +3,7 @@
 A custom database designed specifically for `aoitelegram`.
 
 ## Usage Example
+
 ```javascript
 const { KeyValue } = require("@aoitelegram/database");
 
@@ -32,7 +33,9 @@ console.log(db.get("main", "5"));
 // Event listeners for database events
 db.on("ready", () => console.log("Database is ready"));
 db.on("create", (newValue) => console.log("Create: ", newValue));
-db.on("update", (newValue, oldValue) => console.log("Update:", newValue, "Old Value:", oldValue));
+db.on("update", (newValue, oldValue) =>
+  console.log("Update:", newValue, "Old Value:", oldValue),
+);
 db.on("delete", (oldValue) => console.log("Deleted Value:", oldValue));
 db.on("deleteAll", (oldValue) => console.log("All values deleted:", oldValue));
 

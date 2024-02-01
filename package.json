@@ -1,6 +1,6 @@
 {
   "name": "@aoitelegram/database",
-  "version": "0.0.3",
+  "version": "0.2.1",
   "description": "A custom database designed specifically for aoitelegram",
   "main": "./dist/index.js",
   "typing": "./dist/index.d.ts",
@@ -28,5 +28,8 @@
   "author": "Sempai<zadmanthegreat@gmail.com>",
   "devDependencies": {
     "@types/node": "^20.10.4"
+  },
+  "dependencies": {
+    "mongodb": "^6.3.0"
   }
 }
