@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import getStream from "get-stream";
+import { createReadStream, createWriteStream } from "node:fs";
 import { type FirebaseOptions, initializeApp } from "@firebase/app";
 import {
   type Firestore,
@@ -262,6 +265,64 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
       await deleteDoc(documentRef);
     }
     this.emit("deleteAll", { table, variables: keys });
+  }
+
+  /**
+   * Converts data from a specified table to JSON format and writes it to a file.
+   * @param table - The name of the table to convert.
+   * @param filePath - The file path to write the JSON data.
+   */
+  async convertFileToTable(table: string, filePath: string) {
+    if (!filePath) {
+      throw new Error("The 'filePath' parameter is not specified");
+    }
+
+    /**
+     * Reads data from a file and parses it into JSON format.
+     */
+    const readFileParseJSON = async (filePath: string) => {
+      try {
+        const stream = createReadStream(filePath);
+        const buffer = await getStream.buffer(stream);
+        const fileData = buffer.toString()
+          ? buffer.toString()
+          : await getStream.buffer(createReadStream(filePath));
+        return JSON.parse(fileData as unknown as string);
+      } catch (err) {
+        console.log(err);
+        return {};
+      }
+    };
+
+    const fileData = await readFileParseJSON(filePath);
+    const fileEntries = Object.entries(fileData) as unknown as {
+      key: string;
+      value: any;
+    }[][];
+    for (const data of fileEntries) {
+      await this.set(table, `${data[1].key}`, data[1].value);
+    }
+  }
+
+  /**
+   * Converts data from a specified table to JSON format and writes it to a file.
+   * @param table - The name of the table to convert.
+   * @param filePath - The file path to write the JSON data.
+   */
+  async convertTableToFile(table: string, filePath: string) {
+    if (!filePath) {
+      throw new Error("The 'filePath' parameter is not specified");
+    }
+
+    const tableData = await this.all(table);
+
+    let database: { [key: string]: any } = {};
+
+    Object.entries(tableData).forEach(([key, value]) => {
+      database[key] = { key, value };
+    });
+
+    createWriteStream(filePath).write(JSON.stringify(database));
   }
 
   /**
