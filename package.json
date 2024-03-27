@@ -2,10 +2,21 @@
   "name": "@aoitelegram/database",
   "version": "1.0.0",
   "description": "A custom database designed specifically for aoitelegram",
-  "main": "./dist/index.js",
-  "typing": "./dist/index.d.ts",
-  "type": "commonjs",
+  "main": "./dist/src/index.js",
+  "typing": "./dist/src/index.d.ts",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      },
+      "import": {
+        "types": "./dist/src/index.d.mts",
+        "default": "./dist/src/index.mjs"
+      }
+    }
+  },
   "files": [
     "./dist",
     "package.json",

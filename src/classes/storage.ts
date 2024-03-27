@@ -5,6 +5,12 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { ManagerEvents } from "./events";
 import { deepEqualTry } from "../utils";
 
+type StorageDBOptions = {
+  path: string;
+  tables: string[];
+  extname?: string;
+};
+
 /**
  * Represents a generic storage manager using JSON files.
  * @typeparam V The type of values stored in the database.
@@ -338,4 +344,4 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
   }
 }
 
-export { StorageDB };
+export { StorageDB, StorageDBOptions };

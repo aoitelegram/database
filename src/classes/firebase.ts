@@ -15,6 +15,8 @@ import {
 import { ManagerEvents } from "./events";
 import { deepEqualTry } from "../utils";
 
+type FirebaseDBOptions = FirebaseOptions & { tables?: string[] };
+
 /**
  * Represents a generic Firebase database manager.
  * @typeparam V The type of values stored in the database.
@@ -352,4 +354,4 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
   }
 }
 
-export { FirebaseDB };
+export { FirebaseDB, FirebaseDBOptions };

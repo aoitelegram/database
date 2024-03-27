@@ -9,6 +9,8 @@ import {
 import { ManagerEvents } from "./events";
 import { deepEqualTry } from "../utils";
 
+type MongoDBOptions = MongoClientOptions & { tables?: string[] };
+
 /**
  * Represents a generic MongoDB manager.
  * @typeparam V The type of values stored in the database.
@@ -25,7 +27,7 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
    */
   constructor(
     public readonly url: string,
-    public readonly options?: MongoClientOptions & { tables: string[] },
+    public readonly options?: MongoClientOptions & { tables?: string[] },
   ) {
     super();
     this.tables = options?.tables || ["main"];
@@ -353,4 +355,4 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
   }
 }
 
-export { MongoDB };
+export { MongoDB, MongoDBOptions };
