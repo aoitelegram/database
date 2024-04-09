@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { EventDataMap } from "../typing";
+import type { IEventDataMap } from "../typing";
 
 /**
  * Represents a generic event manager that extends EventEmitter.
@@ -20,17 +20,17 @@ class ManagerEvents<Value, Class> extends EventEmitter {
    * @param listener The callback function to invoke when the event occurs.
    * @returns This instance for chaining.
    */
-  on<T extends keyof EventDataMap<Value, Class>>(
+  on<T extends keyof IEventDataMap<Value, Class>>(
     eventName: T,
-    listener: (args: EventDataMap<Value, Class>[T]) => unknown,
+    listener: (args: IEventDataMap<Value, Class>[T]) => unknown,
   ): this;
 
   /**
    * Overloaded implementation of the on method.
    */
   on(
-    eventName: keyof EventDataMap<Value, Class>,
-    listener: (args: EventDataMap<Value, Class>[typeof eventName]) => unknown,
+    eventName: keyof IEventDataMap<Value, Class>,
+    listener: (args: IEventDataMap<Value, Class>[typeof eventName]) => unknown,
   ) {
     super.on(eventName, listener);
     return this;
@@ -42,17 +42,17 @@ class ManagerEvents<Value, Class> extends EventEmitter {
    * @param listener The callback function to invoke when the event occurs.
    * @returns This instance for chaining.
    */
-  once<T extends keyof EventDataMap<Value, Class>>(
+  once<T extends keyof IEventDataMap<Value, Class>>(
     eventName: T,
-    listener: (args: EventDataMap<Value, Class>[T]) => unknown,
+    listener: (args: IEventDataMap<Value, Class>[T]) => unknown,
   ): this;
 
   /**
    * Overloaded implementation of the once method.
    */
   once(
-    eventName: keyof EventDataMap<Value, Class>,
-    listener: (args: EventDataMap<Value, Class>[typeof eventName]) => unknown,
+    eventName: keyof IEventDataMap<Value, Class>,
+    listener: (args: IEventDataMap<Value, Class>[typeof eventName]) => unknown,
   ) {
     super.once(eventName, listener);
     return this;
@@ -64,17 +64,17 @@ class ManagerEvents<Value, Class> extends EventEmitter {
    * @param listener The callback function to remove from the event.
    * @returns This instance for chaining.
    */
-  off<T extends keyof EventDataMap<Value, Class>>(
+  off<T extends keyof IEventDataMap<Value, Class>>(
     eventName: T,
-    listener: (args: EventDataMap<Value, Class>[T]) => unknown,
+    listener: (args: IEventDataMap<Value, Class>[T]) => unknown,
   ): this;
 
   /**
    * Overloaded implementation of the off method.
    */
   off(
-    eventName: keyof EventDataMap<Value, Class>,
-    listener: (args: EventDataMap<Value, Class>[typeof eventName]) => unknown,
+    eventName: keyof IEventDataMap<Value, Class>,
+    listener: (args: IEventDataMap<Value, Class>[typeof eventName]) => unknown,
   ) {
     super.once(eventName, listener);
     return this;
@@ -86,17 +86,17 @@ class ManagerEvents<Value, Class> extends EventEmitter {
    * @param eventData The data associated with the event.
    * @returns A boolean indicating whether the event had listeners.
    */
-  emit<T extends keyof EventDataMap<Value, Class>>(
+  emit<T extends keyof IEventDataMap<Value, Class>>(
     eventName: T,
-    eventData: EventDataMap<Value, Class>[T],
+    eventData: IEventDataMap<Value, Class>[T],
   ): boolean;
 
   /**
    * Overloaded implementation of the emit method.
    */
   emit(
-    eventName: keyof EventDataMap<Value, Class>,
-    eventData: EventDataMap<Value, Class>[typeof eventName],
+    eventName: keyof IEventDataMap<Value, Class>,
+    eventData: IEventDataMap<Value, Class>[typeof eventName],
   ) {
     return super.emit(eventName, eventData);
   }

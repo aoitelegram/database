@@ -1,4 +1,4 @@
-interface EventDataMap<Value, Class> {
+interface IEventDataMap<Value, Class> {
   create: {
     table: string;
     variable: string;
@@ -22,4 +22,4 @@ interface EventDataMap<Value, Class> {
   ready: Class;
 }
 
-export { EventDataMap };
+export { IEventDataMap };
