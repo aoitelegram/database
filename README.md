@@ -1,7 +1,7 @@
 # **@aoitelegram/database**
 
 [![NPM Version](https://img.shields.io/npm/v/@aoitelegram/database)](https://www.npmjs.com/package/@aoitelegram/database)
-[![Bot API](https://img.shields.io/badge/Bot%20API-v.7.1-00aced.svg?style=flat-square&logo=telegram)](https://core.telegram.org/bots/api)
+[![Bot API](https://img.shields.io/badge/Bot%20API-v.7.2-00aced.svg?style=flat-square&logo=telegram)](https://core.telegram.org/bots/api)
 [![NPM Downloads](https://img.shields.io/npm/dt/@aoitelegram/database.svg?maxAge=3600)](https://www.npmjs.com/package/@aoitelegram/database)
 [![License](https://img.shields.io/npm/l/@aoitelegram/database)](https://github.com/aoitelegram/database/blob/main/LICENSE)
 
@@ -82,7 +82,7 @@ Please refer to the [API Documentation](#) for detailed information on classes, 
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+Contributions are welcome! If you find any issues or have suggestions for improvements, please create a `GitHub` issue or submit a pull request. Additionally, feel free to reach out to me on Telegram via my username `@SempaiJS` or on Discord using my username `sempaika_chess`.
 
 ## License
 
