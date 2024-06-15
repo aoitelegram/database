@@ -12,7 +12,7 @@ import {
   setDoc,
   getDocs,
 } from "@firebase/firestore/lite";
-import { ManagerEvents } from "./events";
+import { ManagerEvents } from "./ManagerEvents";
 import { deepEqualTry } from "../utils";
 
 type FirebaseDBOptions = FirebaseOptions & { tables?: string[] };

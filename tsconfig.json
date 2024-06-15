@@ -12,6 +12,7 @@
     "declarationDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,

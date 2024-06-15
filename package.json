@@ -39,12 +39,15 @@
   "author": "Sempai<zadmanthegreat@gmail.com>",
   "devDependencies": {
     "@types/get-stream": "^3.0.2",
+    "@types/long-timeout": "^0.1.2",
     "@types/node": "^20.10.4"
   },
   "dependencies": {
     "@firebase/app": "^0.9.27",
     "@firebase/firestore": "4.4.2",
+    "aoitelegram": "^1.0.0-beta.2",
     "get-stream": "^6.0.1",
+    "long-timeout": "^0.1.1",
     "mongodb": "^6.3.0"
   }
 }

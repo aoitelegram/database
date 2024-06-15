@@ -1,4 +1,8 @@
+import type { TimeoutData } from "./classes/TimeoutManager";
+
 interface IEventDataMap<Value, Class> {
+  timeout: TimeoutData;
+  addTimeout: TimeoutData;
   create: {
     table: string;
     variable: string;

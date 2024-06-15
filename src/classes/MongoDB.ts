@@ -1,137 +1,114 @@
 import fs from "node:fs/promises";
-import { join } from "node:path";
 import getStream from "get-stream";
 import { createReadStream, createWriteStream } from "node:fs";
-import { ManagerEvents } from "./events";
+import {
+  type MongoClientOptions,
+  MongoClient,
+  ServerApiVersion,
+} from "mongodb";
+import { ManagerEvents } from "./ManagerEvents";
 import { deepEqualTry } from "../utils";
 
-type StorageDBOptions = {
-  path: string;
-  tables: string[];
-  extname?: string;
-};
+type MongoDBOptions = MongoClientOptions & { tables?: string[] };
 
 /**
- * Represents a generic storage manager using JSON files.
+ * Represents a generic MongoDB manager.
  * @typeparam V The type of values stored in the database.
  */
-class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
+class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
   #isReady: boolean = false;
-  public readonly options: {
-    path: string;
-    tables: string[];
-    extname: string;
-  };
+  public readonly tables: string[];
+  public client: MongoClient = null as unknown as MongoClient;
 
   /**
-   * Constructs a new StorageDB instance.
-   * @param options Configuration options for the storage manager.
+   * Constructs a new MongoDB instance.
+   * @param url The URL of the MongoDB database.
+   * @param options Additional options for MongoDB initialization, including tables.
    */
   constructor(
-    options: {
-      path?: string;
-      tables?: string[];
-      extname?: string;
-    } = {},
+    public readonly url: string,
+    public readonly options?: MongoClientOptions & { tables?: string[] },
   ) {
     super();
-    this.options = {
-      path: options.path || "./database/",
-      tables: options.tables || ["main"],
-      extname: options.extname || ".json",
-    };
+    this.tables = options?.tables || ["main"];
   }
 
-  private async getData(tableName: string) {
-    const { path, tables, extname } = this.options;
-
+  /**
+   * Checks if the specified table exists.
+   * @param tableName The name of the table to check.
+   * @throws Error if the database is not ready or the table does not exist.
+   */
+  private hasTable(tableName: string) {
     if (!this.#isReady) {
       throw new Error(
-        'After employing the techniques, incinerate the class utilizing the "<StorageDB>.connect" method',
+        'After employing the techniques, incinerate the class utilizing the "<MongoDB>.connect" method',
       );
     }
 
-    if (tables.findIndex((table) => table === tableName) === -1) {
+    if (this.tables.findIndex((table) => table === tableName) === -1) {
       throw new Error(`The specified table "${tableName}" is not available`);
     }
-
-    const filePath = join(process.cwd(), path, tableName, `storage${extname}`);
-
-    try {
-      const stream = createReadStream(filePath);
-      const buffer = await getStream.buffer(stream);
-      const fileData = buffer.toString()
-        ? buffer.toString()
-        : await getStream.buffer(createReadStream(filePath));
-      return JSON.parse(fileData as unknown as string);
-    } catch (err) {
-      console.log(err);
-      return {};
-    }
-  }
-
-  private async setData(tableName: string, data: unknown) {
-    const { path, tables, extname } = this.options;
-
-    if (tables.findIndex((table) => table === tableName) === -1) {
-      throw new Error(`The specified table "${tableName}" is not available`);
-    }
-
-    const content = JSON.stringify(data);
-    const filePath = join(process.cwd(), path, tableName, `storage${extname}`);
-
-    createWriteStream(filePath).write(content);
   }
 
   /**
-   * Retrieves a value associated with the specified key from the specified table.
+   * Retrieves a value from the specified table with the given key.
    * @param table The name of the table.
-   * @param key The key to retrieve the value for.
+   * @param key The key of the value to retrieve.
    * @returns The value associated with the key, if found; otherwise, undefined.
    */
   async get(table: string, key: string): Promise<V | undefined> {
-    const data = await this.getData(table);
-    return data[key]?.["value"];
+    this.hasTable(table);
+    const collection = await this.client.db(table).collection(key);
+    const findKey = await collection.findOne({ _k: key });
+    return findKey?._v;
   }
 
   /**
-   * Sets a value associated with the specified key in the specified table.
-   * Emits "create" event if the key does not exist, and "update" event if the value changes.
+   * Sets a value in the specified table with the given key.
+   * Emits "create" event if the key does not exist, and "update" event if the key already exists and value changes.
    * @param table The name of the table.
-   * @param key The key to associate the value with.
+   * @param key The key of the value to set.
    * @param value The value to set.
    * @returns This instance for chaining.
    */
   async set(table: string, key: string, value: V) {
-    let data = await this.getData(table);
-    if (!data[key]) {
+    this.hasTable(table);
+    const collection = await this.client.db(table).collection(key);
+    const oldData = (await this.get(table, key)) as V;
+
+    if (!((await collection.countDocuments()) > 0)) {
       this.emit("create", {
         table,
         variable: key,
         data: value,
       });
-    } else if (!deepEqualTry(value, data[key]?.value)) {
+    } else if (!deepEqualTry(value, oldData)) {
       this.emit("update", {
         table,
         variable: key,
         newData: value,
-        oldData: data[key].value,
+        oldData,
       });
     }
-    data[key] = { key, value };
-    await this.setData(table, data);
+
+    await collection.updateOne(
+      { _k: key },
+      { $set: { _v: value, _k: key } },
+      { upsert: true },
+    );
     return this;
   }
 
   /**
-   * Checks if a key exists in the specified table.
+   * Checks if a value with the specified key exists in the table.
    * @param table The name of the table.
    * @param key The key to check for existence.
    * @returns True if the key exists, false otherwise.
    */
   async has(table: string, key: string) {
-    const data = await this.getData(table);
-    return typeof data[key] === "object";
+    this.hasTable(table);
+    const collection = await this.client.db(table).collection(key);
+    return (await collection.countDocuments()) > 0;
   }
 
   /**
@@ -140,12 +117,21 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
    * @returns An object containing all key-value pairs in the table.
    */
   async all(table: string) {
-    let entries: { [key: string]: V } = {};
-    const data: { [key: string]: { value: V } } = await this.getData(table);
-    Object.entries(data).forEach(
-      ([key, value]) => (entries[String(key)] = value.value),
+    this.hasTable(table);
+    const collection = await this.client.db(table).collections();
+    let allDocuments = await Promise.all(
+      collection.map(async (res) => await res.findOne({})),
     );
-    return entries;
+
+    const allData: { [key: string]: V } = {};
+
+    for (const document of allDocuments) {
+      if (document) {
+        allData[document._k] = document._v;
+      }
+    }
+
+    return allData;
   }
 
   /**
@@ -157,10 +143,14 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
   async findOne(
     table: string,
     callback: (
-      entry: { key: string; value: V },
+      entry: {
+        key: string;
+        value: V;
+      },
       index: number,
     ) => boolean | Promise<boolean>,
   ) {
+    this.hasTable(table);
     const entries = Object.entries(await this.all(table));
 
     for (let i = 0; i < entries.length; i++) {
@@ -184,10 +174,14 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
   async findMany(
     table: string,
     callback: (
-      entry: { key: string; value: V },
+      entry: {
+        key: string;
+        value: V;
+      },
       index: number,
     ) => boolean | Promise<boolean>,
   ) {
+    this.hasTable(table);
     let entries: { key: string; value: V; index: number }[] = [];
     const allEntries = Object.entries(await this.all(table));
 
@@ -211,10 +205,14 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
   async deleteMany(
     table: string,
     callback: (
-      entry: { key: string; value: V },
+      entry: {
+        key: string;
+        value: V;
+      },
       index: number,
     ) => boolean | Promise<boolean>,
   ) {
+    this.hasTable(table);
     let entries: string[] = [];
     const allEntries = Object.entries(await this.all(table));
 
@@ -236,17 +234,21 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
    * @param key The key or array of keys to delete.
    */
   async delete(table: string, key: string | string[]) {
-    let data = await this.getData(table);
+    this.hasTable(table);
     const keys = Array.isArray(key) ? key : [key];
-    this.emit("delete", {
-      table,
-      variable: key,
-      data: !Array.isArray(key)
-        ? data[key].value
-        : [...key].map((key) => data[key].value),
-    });
-    keys.forEach((key) => delete data[key]);
-    await this.setData(table, data);
+
+    for (const k of keys) {
+      const collection = await this.client.db(table).collection(k);
+      const oldData = (await this.get(table, k)) as V;
+
+      await collection.deleteOne({ _k: k }).then(() =>
+        this.emit("delete", {
+          table,
+          variable: k,
+          data: oldData,
+        }),
+      );
+    }
   }
 
   /**
@@ -254,8 +256,13 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
    * @param table The name of the table.
    */
   async clear(table: string) {
+    this.hasTable(table);
     const keys = await this.all(table);
-    await this.setData(table, {});
+    for (const k of Object.keys(keys)) {
+      const collection = await this.client.db(table).collection(k);
+
+      await collection.deleteOne({ _k: k });
+    }
     this.emit("deleteAll", { table, variables: keys });
   }
 
@@ -306,42 +313,46 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
       throw new Error("The 'filePath' parameter is not specified");
     }
 
-    const data = await this.getData(table);
-    createWriteStream(filePath).write(JSON.stringify(data));
+    const tableData = await this.all(table);
+
+    let database: { [key: string]: any } = {};
+
+    Object.entries(tableData).forEach(([key, value]) => {
+      database[key] = { key, value };
+    });
+
+    createWriteStream(filePath).write(JSON.stringify(database));
   }
 
   /**
-   * Pings the storage database to check responsiveness.
+   * Pings the MongoDB database to check responsiveness.
    * @returns The time taken in milliseconds to retrieve data from all tables.
    */
   async ping() {
     const start = Date.now();
-    this.options.tables.forEach(async (table) => await this.all(table));
+    this.tables.forEach(async (table) => await this.all(table));
     return Date.now() - start;
   }
 
   /**
-   * Connects to the storage database.
-   * Initializes data files for tables and emits "ready" event upon successful connection.
+   * Connects to the MongoDB database.
+   * Initializes MongoDB client instance and emits "ready" event upon successful connection.
    * @returns This instance for chaining.
    */
   async connect() {
-    const { path, tables, extname } = this.options;
-    for (const table of tables) {
-      const tablePath = join(process.cwd(), path, table);
-      const filePath = join(tablePath, `storage${extname}`);
-
-      await fs.mkdir(tablePath, { recursive: true });
-
-      try {
-        await fs.access(filePath, fs.constants.F_OK);
-      } catch (err) {
-        await fs.writeFile(filePath, "{}");
-      }
-    }
-    this.#isReady = true;
-    this.emit("ready", this);
+    this.client = new MongoClient(this.url, {
+      serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: false,
+      },
+      ...this.options,
+    });
+    await this.client.connect().then(() => {
+      this.#isReady = true;
+      this.emit("ready", this);
+    });
   }
 }
 
-export { StorageDB, StorageDBOptions };
+export { MongoDB, MongoDBOptions };
