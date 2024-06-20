@@ -17,6 +17,53 @@ npm install @aoitelegram/database
 
 ## Usage
 
+### AoiTelegram Connect
+```typescript
+// CommonJS
+const { AoiClient } = require("aoitelegram");
+const { AoiDB } = require("@aoitelegram/database");
+// Esm/TypeScript
+import { AoiClient } from "aoitelegram";
+import { AoiDB } from "@aoitelegram/database";
+
+const database = new AoiDB({
+  type: "storage",
+  logger: true,
+  options: {
+    tables: ["main"],
+  }
+});
+
+const bot = AoiClient("token", {
+  extension: [database],
+  // ...other
+});
+
+database.timeoutCommand({
+  id: "other",
+  code: "$print[Yesssss!;$timeoutData[key]]"
+});
+
+bot.addCommand({
+  name: "start_timeout",
+  code: "$setTimeout[other;10m;{ key: 'Hello World' }]"
+})
+
+// Set user variables in a table.
+database.variables(
+  {
+    sempai: 10,
+    string: "Hello, world!",
+    aoijs: true,
+    webapp: false,
+    mz: [],
+  },
+  "main",
+);
+
+bot.connect();
+```
+
 ### FirebaseDB
 
 ```typescript
@@ -82,7 +129,7 @@ Please refer to the [API Documentation](#) for detailed information on classes, 
 
 ## Contributing
 
-Contributions are welcome! If you find any issues or have suggestions for improvements, please create a `GitHub` issue or submit a pull request. Additionally, feel free to reach out to me on Telegram via my username `@SempaiJS` or on Discord using my username `sempaika_chess`.
+Contributions are welcome! If you find any issues or have suggestions for improvements, please create a `GitHub` issue or submit a pull request. Additionally, feel free to reach out to me on Telegram via my group [AoiTelegram](https://t.me/aoitegram) or on Discord using my username `sempaika_chess`.
 
 ## License
 
