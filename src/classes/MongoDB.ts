@@ -267,9 +267,9 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
   }
 
   /**
-   * Converts data from a specified table to JSON format and writes it to a file.
-   * @param table - The name of the table to convert.
-   * @param filePath - The file path to write the JSON data.
+   * Reads data from a file, parses it into JSON format, and writes it to a specified table in the database.
+   * @param table - The name of the table to populate with data.
+   * @param filePath - The file path to read the JSON data from.
    */
   async convertFileToTable(table: string, filePath: string) {
     if (!filePath) {
@@ -304,9 +304,9 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
   }
 
   /**
-   * Converts data from a specified table to JSON format and writes it to a file.
-   * @param table - The name of the table to convert.
-   * @param filePath - The file path to write the JSON data.
+   * Converts data from a specified table in the database to JSON format and writes it to a file.
+   * @param table - The name of the table to convert to JSON.
+   * @param filePath - The file path to write the JSON data to.
    */
   async convertTableToFile(table: string, filePath: string) {
     if (!filePath) {
