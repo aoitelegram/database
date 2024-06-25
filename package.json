@@ -48,6 +48,7 @@
     "aoitelegram": "^1.0.0-beta.2",
     "get-stream": "^6.0.1",
     "long-timeout": "^0.1.1",
-    "mongodb": "^6.3.0"
+    "mongodb": "^6.3.0",
+    "mysql2": "^3.10.1"
   }
 }

@@ -27,7 +27,7 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
    */
   constructor(
     public readonly url: string,
-    public readonly options?: MongoClientOptions & { tables?: string[] },
+    public readonly options?: MongoDBOptions,
   ) {
     super();
     this.tables = options?.tables || ["main"];
@@ -45,7 +45,7 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
       );
     }
 
-    if (this.tables.findIndex((table) => table === tableName) === -1) {
+    if (this.tables.indexOf(tableName) === -1) {
       throw new Error(`The specified table "${tableName}" is not available`);
     }
   }
@@ -315,7 +315,7 @@ class MongoDB<V> extends ManagerEvents<V, MongoDB<V>> {
 
     const tableData = await this.all(table);
 
-    let database: { [key: string]: any } = {};
+    let database: Record<string, any> = {};
 
     Object.entries(tableData).forEach(([key, value]) => {
       database[key] = { key, value };

@@ -1,5 +1,6 @@
 export * from "./classes/FirebaseDB.js";
 export * from "./classes/StorageDB.js";
+export * from "./classes/MySqlDB.js";
 export * from "./classes/MongoDB.js";
 export * from "./classes/TimeoutManager.js";
 export * from "./classes/AoiDB.js";

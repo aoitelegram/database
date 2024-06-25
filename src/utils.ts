@@ -4,7 +4,7 @@ function deepEqualTry(actual: unknown, expected: unknown) {
   try {
     deepEqual(actual, expected);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

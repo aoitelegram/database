@@ -1,6 +1,7 @@
 import { type IEventDataMap } from "../typing";
 import { Collection } from "@telegram.ts/collection";
 import { AoiLogger, AoijsTypeError } from "aoitelegram";
+import { MySqlDB, type MySqlDBOptions } from "./MySqlDB";
 import { MongoDB, type MongoDBOptions } from "./MongoDB";
 import { StorageDB, type StorageDBOptions } from "./StorageDB";
 import { FirebaseDB, type FirebaseDBOptions } from "./FirebaseDB";
@@ -9,6 +10,7 @@ type AoiManagerOptions = { logging?: boolean } & (
   | { type: "storage"; options?: StorageDBOptions }
   | { type: "mongo"; url: string; options?: MongoDBOptions }
   | { type: "firebase"; url: string; options?: FirebaseDBOptions }
+  | { type: "mysql"; options: MySqlDBOptions & { tables?: string[] } }
 );
 
 class AoiManager<Value = any> {
@@ -16,7 +18,8 @@ class AoiManager<Value = any> {
   public readonly database:
     | StorageDB<Value>
     | MongoDB<Value>
-    | FirebaseDB<Value>;
+    | FirebaseDB<Value>
+    | MySqlDB<Value>;
   public readonly collection: Collection<string, Value> = new Collection();
 
   constructor(
@@ -48,6 +51,8 @@ class AoiManager<Value = any> {
       this.database = new MongoDB(options.url, options.options);
     } else if (options.type === "firebase") {
       this.database = new FirebaseDB(options.url, options.options);
+    } else if (options.type === "mysql") {
+      this.database = new MySqlDB(options.options, options.options?.tables);
     } else {
       throw new AoijsTypeError(`Invalid type database`);
     }

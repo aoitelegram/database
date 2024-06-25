@@ -18,6 +18,7 @@ npm install @aoitelegram/database
 ## Usage
 
 ### AoiTelegram Connect
+
 ```typescript
 // CommonJS
 const { AoiClient } = require("aoitelegram");
@@ -31,7 +32,7 @@ const database = new AoiDB({
   logger: true,
   options: {
     tables: ["main"],
-  }
+  },
 });
 
 const bot = AoiClient("token", {
@@ -41,13 +42,13 @@ const bot = AoiClient("token", {
 
 database.timeoutCommand({
   id: "other",
-  code: "$print[Yesssss!;$timeoutData[key]]"
+  code: "$print[Yesssss!;$timeoutData[key]]",
 });
 
 bot.addCommand({
-  name: "start_timeout",
-  code: "$setTimeout[other;10m;{ key: 'Hello World' }]"
-})
+  command: "start_timeout",
+  code: "$setTimeout[other;10m;{ key: 'Hello World' }]",
+});
 
 // Set user variables in a table.
 database.variables(
@@ -93,6 +94,25 @@ import { MongoDB } from "@aoitelegram/database";
 const db = new MongoDB("<your-mongodb-url>", {
   tables: ["users", "posts"], // Specify tables
 });
+
+// Connect to the MongoDB database
+await db.connect();
+
+// Perform operations such as get, set, delete, etc.
+await db.set("users", "user1", { name: "John", age: 30 });
+const user = await db.get("users", "user1");
+console.log(user); // Output: { name: 'John', age: 30 }
+```
+
+### MySqlDB
+
+```typescript
+import { MySqlDB } from "@aoitelegram/database";
+
+// Create a MongoDB instance
+const db = new MySqlDB(<url> and <connection options> (host, user, password, port),
+  ["users", "posts"], // Specify tables
+);
 
 // Connect to the MongoDB database
 await db.connect();

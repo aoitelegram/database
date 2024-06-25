@@ -1,42 +1,35 @@
-import fs from "node:fs/promises";
 import getStream from "get-stream";
-import { createReadStream, createWriteStream } from "node:fs";
-import { type FirebaseOptions, initializeApp } from "@firebase/app";
-import {
-  type Firestore,
-  getFirestore,
-  doc,
-  collection,
-  updateDoc,
-  deleteDoc,
-  setDoc,
-  getDocs,
-} from "@firebase/firestore/lite";
-import { ManagerEvents } from "./ManagerEvents";
 import { deepEqualTry } from "../utils";
+import {
+  createConnection,
+  type Connection,
+  type ConnectionOptions,
+} from "mysql2/promise";
+import { ManagerEvents } from "./ManagerEvents";
+import { createReadStream, createWriteStream } from "node:fs";
 
-type FirebaseDBOptions = FirebaseOptions & { tables?: string[] };
+type MySqlDBOptions = ConnectionOptions | string;
 
 /**
- * Represents a generic Firebase database manager.
+ * Represents a generic MySqlDB manager.
  * @typeparam V The type of values stored in the database.
  */
-class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
+class MySqlDB<V> extends ManagerEvents<V, MySqlDB<V>> {
   #isReady: boolean = false;
   public readonly tables: string[];
-  public firebase: Firestore = null as unknown as Firestore;
+  public pool: Connection = null as unknown as Connection;
 
   /**
-   * Constructs a new FirebaseDB instance.
-   * @param url The URL of the Firebase database.
-   * @param options Additional options for Firebase initialization, including tables.
+   * Constructs a new MySqlDB instance.
+   * @param options The config of the MySqlDB database.
+   * @param tables Additional including tables.
    */
   constructor(
-    public readonly url: string,
-    public readonly options?: FirebaseDBOptions,
+    public readonly options: MySqlDBOptions,
+    tables?: string[],
   ) {
     super();
-    this.tables = options?.tables || ["main"];
+    this.tables = Array.isArray(tables) ? tables : ["main"];
   }
 
   /**
@@ -47,7 +40,7 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
   private hasTable(tableName: string) {
     if (!this.#isReady) {
       throw new Error(
-        'After employing the techniques, incinerate the class utilizing the "<FirebaseDB>.connect" method',
+        'After employing the techniques, incinerate the class utilizing the "<MySqlDB>.connect" method',
       );
     }
 
@@ -60,12 +53,16 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
    * Retrieves a value from the specified table with the given key.
    * @param table The name of the table.
    * @param key The key of the value to retrieve.
-   * @returns The value associated with the key, if found.
+   * @returns The value associated with the key, if found; otherwise, undefined.
    */
   async get(table: string, key: string): Promise<V | undefined> {
     this.hasTable(table);
-    const allDocumentRef = await this.all(table);
-    return allDocumentRef[key];
+    const [rows] = await this.pool.execute(
+      `SELECT value FROM ${table} WHERE \`key\` = ?`,
+      [key],
+    );
+    const result = (rows as any[])[0];
+    return result ? JSON.parse(result.value) : undefined;
   }
 
   /**
@@ -78,29 +75,18 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
    */
   async set(table: string, key: string, value: V) {
     this.hasTable(table);
-    const documentRef = doc(this.firebase, `${table}/${key}`).withConverter(
-      null,
-    );
-    const oldData = (await this.get(table, key)) as V;
+    const oldData = await this.get(table, key);
 
-    if (!(await this.has(table, key))) {
-      this.emit("create", {
-        table,
-        variable: key,
-        data: value,
-      });
+    if (oldData === undefined) {
+      this.emit("create", { table, variable: key, data: value });
     } else if (!deepEqualTry(value, oldData)) {
-      this.emit("update", {
-        table,
-        variable: key,
-        newData: value,
-        oldData,
-      });
+      this.emit("update", { table, variable: key, newData: value, oldData });
     }
 
-    await setDoc(documentRef, {
-      [key]: value,
-    });
+    await this.pool.execute(
+      `INSERT INTO ${table} (\`key\`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+      [key, JSON.stringify(value)],
+    );
     return this;
   }
 
@@ -112,8 +98,11 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
    */
   async has(table: string, key: string) {
     this.hasTable(table);
-    const allDocumentRef = await this.all(table);
-    return Object.entries(allDocumentRef).findIndex(([k]) => k === key) !== -1;
+    const [rows] = await this.pool.execute(
+      `SELECT 1 FROM ${table} WHERE \`key\` = ?`,
+      [key],
+    );
+    return (rows as any[]).length > 0;
   }
 
   /**
@@ -123,15 +112,14 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
    */
   async all(table: string) {
     this.hasTable(table);
-    let allDocumentRef: { [key: string]: V } = {};
-    const collectionRef = collection(this.firebase, table);
-    const snapshot = await getDocs(collectionRef);
-    const dataList = snapshot.docs.map((doc) => doc.data());
-    dataList.forEach((data) => {
-      const [key, value] = Object.entries(data)[0];
-      allDocumentRef[key] = value;
-    });
-    return allDocumentRef;
+    const [rows] = await this.pool.execute(`SELECT * FROM ${table}`);
+    const allData: { [key: string]: V } = {};
+
+    for (const row of rows as any[]) {
+      allData[row.key] = JSON.parse(row.value);
+    }
+
+    return allData;
   }
 
   /**
@@ -238,18 +226,17 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
     const keys = Array.isArray(key) ? key : [key];
 
     for (const k of keys) {
-      const documentRef = doc(this.firebase, `${table}/${k}`).withConverter(
-        null,
-      );
       const oldData = (await this.get(table, k)) as V;
 
-      await deleteDoc(documentRef).then(() =>
-        this.emit("delete", {
-          table,
-          variable: k,
-          data: oldData,
-        }),
-      );
+      await this.pool
+        .execute(`DELETE FROM ${table} WHERE \`key\` = ?`, [k])
+        .then(() =>
+          this.emit("delete", {
+            table,
+            variable: k,
+            data: oldData,
+          }),
+        );
     }
   }
 
@@ -259,14 +246,8 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
    */
   async clear(table: string) {
     this.hasTable(table);
-    const keys = await this.all(table);
-    for (const k of Object.keys(keys)) {
-      const documentRef = doc(this.firebase, `${table}/${k}`).withConverter(
-        null,
-      );
-      await deleteDoc(documentRef);
-    }
-    this.emit("deleteAll", { table, variables: keys });
+    await this.pool.execute(`DELETE FROM ${table}`);
+    this.emit("deleteAll", { table });
   }
 
   /**
@@ -279,9 +260,6 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
       throw new Error("The 'filePath' parameter is not specified");
     }
 
-    /**
-     * Reads data from a file and parses it into JSON format.
-     */
     const readFileParseJSON = async (filePath: string) => {
       try {
         const stream = createReadStream(filePath);
@@ -328,7 +306,7 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
   }
 
   /**
-   * Pings the database to check responsiveness.
+   * Pings the MySqlDB database to check responsiveness.
    * @returns The time taken in milliseconds to retrieve data from all tables.
    */
   async ping() {
@@ -338,20 +316,36 @@ class FirebaseDB<V> extends ManagerEvents<V, FirebaseDB<V>> {
   }
 
   /**
-   * Connects to the Firebase database.
-   * Initializes Firebase app and Firestore instance.
-   * Emits "ready" event upon successful connection.
+   * Connects to the MySqlDB database.
+   * Initializes MySqlDB client instance and emits "ready" event upon successful connection.
    * @returns This instance for chaining.
    */
   async connect() {
-    const initialize = initializeApp({
-      databaseURL: this.url,
-      ...this.options,
-    });
-    this.firebase = getFirestore(initialize);
-    this.emit("ready", this);
+    if (typeof this.options === "object" && "tables" in this.options) {
+      delete this.options["tables"];
+    }
+
+    this.pool = await createConnection(
+      (typeof this.options === "string"
+        ? this.options
+        : {
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0,
+            ...this.options,
+          }) as ConnectionOptions,
+    );
+
+    for (const table of this.tables) {
+      await this.pool.execute(`CREATE TABLE IF NOT EXISTS ${table} (
+      \`key\` TEXT,
+      \`value\` TEXT
+    )`);
+    }
+
     this.#isReady = true;
+    this.emit("ready", this);
   }
 }
 
-export { FirebaseDB, FirebaseDBOptions };
+export { MySqlDB, MySqlDBOptions };

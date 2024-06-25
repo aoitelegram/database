@@ -51,7 +51,7 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
       );
     }
 
-    if (tables.findIndex((table) => table === tableName) === -1) {
+    if (tables.indexOf(tableName) === -1) {
       throw new Error(`The specified table "${tableName}" is not available`);
     }
 
@@ -73,7 +73,7 @@ class StorageDB<V> extends ManagerEvents<V, StorageDB<V>> {
   private async setData(tableName: string, data: unknown) {
     const { path, tables, extname } = this.options;
 
-    if (tables.findIndex((table) => table === tableName) === -1) {
+    if (tables.indexOf(tableName) === -1) {
       throw new Error(`The specified table "${tableName}" is not available`);
     }
 
