@@ -1,6 +1,7 @@
+import { AoijsTypeError } from "aoitelegram";
+import { Logger } from "@aoitelegram/util";
 import { type IEventDataMap } from "../typing";
 import { Collection } from "@telegram.ts/collection";
-import { AoiLogger, AoijsTypeError } from "aoitelegram";
 import { MySqlDB, type MySqlDBOptions } from "./MySqlDB";
 import { MongoDB, type MongoDBOptions } from "./MongoDB";
 import { StorageDB, type StorageDBOptions } from "./StorageDB";
@@ -59,7 +60,7 @@ class AoiManager<Value = any> {
 
     if (options.logging === undefined || options.logging) {
       this.on("ready", async (ctx) => {
-        AoiLogger.info("Database has been established");
+        Logger.info("Database has been established");
       });
     }
   }

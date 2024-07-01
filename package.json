@@ -43,6 +43,7 @@
     "@types/node": "^20.10.4"
   },
   "dependencies": {
+    "@aoitelegram/util": "^1.0.0",
     "@firebase/app": "^0.9.27",
     "@firebase/firestore": "4.4.2",
     "aoitelegram": "^1.0.0-beta.2",
