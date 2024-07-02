@@ -1,4 +1,3 @@
-const ms = require("ms");
 const {
   AoiFunction,
   ArgsType,

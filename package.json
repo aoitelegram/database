@@ -1,6 +1,6 @@
 {
   "name": "@aoitelegram/database",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A custom database designed specifically for aoitelegram",
   "main": "./dist/index.js",
   "typing": "./dist/index.d.ts",
@@ -43,10 +43,10 @@
     "@types/node": "^20.10.4"
   },
   "dependencies": {
-    "@aoitelegram/util": "^1.0.0",
+    "@aoitelegram/util": "^1.0.1",
     "@firebase/app": "^0.9.27",
     "@firebase/firestore": "4.4.2",
-    "aoitelegram": "^1.0.0-beta.2",
+    "aoitelegram": "^1.0.0",
     "get-stream": "^6.0.1",
     "long-timeout": "^0.1.1",
     "mongodb": "^6.3.0",

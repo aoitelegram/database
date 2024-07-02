@@ -1,9 +1,4 @@
-const {
-  AoiFunction,
-  ArgsType,
-  formatTime,
-  replaceData,
-} = require("aoitelegram");
+const { AoiFunction, ArgsType } = require("aoitelegram");
 
 module.exports = new AoiFunction()
   .setName("$setVar")

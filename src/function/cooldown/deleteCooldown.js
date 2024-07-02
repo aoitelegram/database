@@ -1,5 +1,4 @@
-const ms = require("ms");
-const { AoiFunction, ArgsType, parseTime } = require("aoitelegram");
+const { AoiFunction, ArgsType } = require("aoitelegram");
 
 module.exports = new AoiFunction()
   .setName("$deleteCooldown")

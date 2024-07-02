@@ -1,4 +1,3 @@
-const ms = require("ms");
 const { AoiFunction, ArgsType } = require("aoitelegram");
 
 module.exports = new AoiFunction()

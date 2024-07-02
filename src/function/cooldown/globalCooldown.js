@@ -1,11 +1,6 @@
-const ms = require("ms");
 const { randomUUID } = require("node:crypto");
-const {
-  AoiFunction,
-  ArgsType,
-  formatTime,
-  replaceData,
-} = require("aoitelegram");
+const { formatTime, replaceData } = require("@aoitelegram/util");
+const { AoiFunction, ArgsType } = require("aoitelegram");
 
 module.exports = new AoiFunction()
   .setName("$globalCooldown")

@@ -1,3 +1,4 @@
+const { getObjectKey } = require("@aoitelegram/util");
 const { AoiFunction, ArgsType } = require("aoitelegram");
 
 module.exports = new AoiFunction()
