@@ -24,12 +24,22 @@ class AoiDB extends AoiExtension {
     new Collection();
   public eventsCollect: Collection<string, CommandData[]> = new Collection();
 
+  /**
+   * Creates an instance of AoiDB.
+   * @param options - The options for the AoiManager.
+   */
   constructor(options?: AoiManagerOptions) {
     super();
     this.database = new AoiManager(options);
     this.timeoutManager = new TimeoutManager(this.database);
   }
 
+  /**
+   * Registers a timeout command.
+   * @param options - The command data.
+   * @returns The instance of AoiDB.
+   * @throws AoijsError if the 'id' or 'code' parameter is not specified.
+   */
   timeoutCommand(options: CommandData<{ id: string }>): AoiDB {
     if (!options?.id) {
       throw new AoijsError("You did not specify the 'id' parameter");
@@ -41,6 +51,12 @@ class AoiDB extends AoiExtension {
     return this;
   }
 
+  /**
+   * Registers a variable create command.
+   * @param options - The command data.
+   * @returns The instance of AoiDB.
+   * @throws AoijsError if the 'code' parameter is not specified.
+   */
   variableCreateCommand(options: CommandData): AoiDB {
     if (!options?.code) {
       throw new AoijsError("You did not specify the 'code' parameter");
@@ -49,6 +65,12 @@ class AoiDB extends AoiExtension {
     return this;
   }
 
+  /**
+   * Registers a variable update command.
+   * @param options - The command data.
+   * @returns The instance of AoiDB.
+   * @throws AoijsError if the 'code' parameter is not specified.
+   */
   variableUpdateCommand(options: CommandData): AoiDB {
     if (!options?.code) {
       throw new AoijsError("You did not specify the 'code' parameter");
@@ -57,6 +79,12 @@ class AoiDB extends AoiExtension {
     return this;
   }
 
+  /**
+   * Registers a variable delete command.
+   * @param options - The command data.
+   * @returns The instance of AoiDB.
+   * @throws AoijsError if the 'code' parameter is not specified.
+   */
   variableDeleteCommand(options: CommandData): AoiDB {
     if (!options?.code) {
       throw new AoijsError("You did not specify the 'code' parameter");
@@ -65,6 +93,12 @@ class AoiDB extends AoiExtension {
     return this;
   }
 
+  /**
+   * Sets the variables for the database.
+   * @param variable - The variable data.
+   * @param tables - The table(s) to store the variable data in.
+   * @returns The instance of AoiDB.
+   */
   variables(
     variable: Record<string, any>,
     tables: string | string[] = "main",
@@ -73,6 +107,10 @@ class AoiDB extends AoiExtension {
     return this;
   }
 
+  /**
+   * Initializes the database and loads functions.
+   * @param telegram - The AoiClient instance.
+   */
   async init(telegram: AoiClient) {
     await this.database.connect().then(async () => {
       for (const [tables, variables] of this.variablesCollect) {
@@ -106,6 +144,11 @@ class AoiDB extends AoiExtension {
     return;
   }
 
+  /**
+   * Adds events to the event collection.
+   * @param type - The type of event.
+   * @param options - The command data.
+   */
   private addEvents(
     type: "variableDelete" | "variableUpdate" | "variableCreate",
     options: CommandData,
@@ -117,6 +160,10 @@ class AoiDB extends AoiExtension {
     return;
   }
 
+  /**
+   * Loads custom functions from the function directory.
+   * @param telegram - The AoiClient instance.
+   */
   private async loadFunction(telegram: AoiClient): Promise<void> {
     const dirPath = path.join(__dirname, "../function/");
     const files = await fs.readdir(dirPath, {

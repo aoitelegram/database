@@ -23,6 +23,10 @@ class AoiManager<Value = any> {
     | MySqlDB<Value>;
   public readonly collection: Collection<string, Value> = new Collection();
 
+  /**
+   * Creates an instance of AoiManager.
+   * @param options - The options for configuring the AoiManager.
+   */
   constructor(
     options: AoiManagerOptions = {
       type: "storage",
@@ -65,6 +69,11 @@ class AoiManager<Value = any> {
     }
   }
 
+  /**
+   * Adds an event listener.
+   * @param eventName - The name of the event.
+   * @param listener - The callback function for the event.
+   */
   on<T extends keyof IEventDataMap<Value, this["database"]>>(
     eventName: T,
     listener: (args: IEventDataMap<Value, this["database"]>[T]) => void,
@@ -72,6 +81,11 @@ class AoiManager<Value = any> {
     return this.database.on(eventName, listener);
   }
 
+  /**
+   * Adds a one-time event listener.
+   * @param eventName - The name of the event.
+   * @param listener - The callback function for the event.
+   */
   once<T extends keyof IEventDataMap<Value, this["database"]>>(
     eventName: T,
     listener: (args: IEventDataMap<Value, this["database"]>[T]) => void,
@@ -79,6 +93,11 @@ class AoiManager<Value = any> {
     return this.database.once(eventName, listener);
   }
 
+  /**
+   * Removes an event listener.
+   * @param eventName - The name of the event.
+   * @param listener - The callback function for the event.
+   */
   off<T extends keyof IEventDataMap<Value, this["database"]>>(
     eventName: T,
     listener: (args: IEventDataMap<Value, this["database"]>[T]) => void,
@@ -86,6 +105,11 @@ class AoiManager<Value = any> {
     return this.database.off(eventName, listener);
   }
 
+  /**
+   * Emits an event.
+   * @param eventName - The name of the event.
+   * @param eventData - The data for the event.
+   */
   emit<T extends keyof IEventDataMap<Value, this["database"]>>(
     eventName: T,
     eventData: IEventDataMap<Value, this["database"]>[T],
@@ -93,25 +117,55 @@ class AoiManager<Value = any> {
     return this.database.emit(eventName, eventData);
   }
 
+  /**
+   * Gets a value from the database.
+   * @param table - The table name.
+   * @param key - The key.
+   * @returns The value.
+   */
   async get(table: string, key: string): Promise<Value | undefined> {
     return await this.database.get(table, key);
   }
 
+  /**
+   * Sets a value in the database.
+   * @param table - The table name.
+   * @param key - The key.
+   * @param value - The value.
+   * @returns The instance of AoiManager.
+   */
   async set(table: string, key: string, value: Value): Promise<this> {
     await this.database.set(table, key, value);
     return this;
   }
 
+  /**
+   * Checks if a key exists in the database.
+   * @param table - The table name.
+   * @param key - The key.
+   * @returns A boolean indicating if the key exists.
+   */
   async has(table: string, key: string): Promise<boolean> {
     return await this.database.has(table, key);
   }
 
+  /**
+   * Gets all values from a table.
+   * @param table - The table name.
+   * @returns An object containing all key-value pairs.
+   */
   async all(table: string): Promise<{
     [key: string]: Value;
   }> {
     return await this.database.all(table);
   }
 
+  /**
+   * Finds one entry in a table that matches the callback criteria.
+   * @param table - The table name.
+   * @param callback - The callback function to match entries.
+   * @returns The matching entry or null.
+   */
   async findOne(
     table: string,
     callback: (
@@ -129,6 +183,12 @@ class AoiManager<Value = any> {
     return await this.database.findOne(table, callback);
   }
 
+  /**
+   * Finds multiple entries in a table that match the callback criteria.
+   * @param table - The table name.
+   * @param callback - The callback function to match entries.
+   * @returns An array of matching entries.
+   */
   async findMany(
     table: string,
     callback: (
@@ -148,6 +208,11 @@ class AoiManager<Value = any> {
     return await this.database.findMany(table, callback);
   }
 
+  /**
+   * Deletes multiple entries in a table that match the callback criteria.
+   * @param table - The table name.
+   * @param callback - The callback function to match entries.
+   */
   async deleteMany(
     table: string,
     callback: (
@@ -161,38 +226,80 @@ class AoiManager<Value = any> {
     return await this.database.deleteMany(table, callback);
   }
 
+  /**
+   * Deletes an entry or entries in a table.
+   * @param table - The table name.
+   * @param key - The key or keys to delete.
+   */
   async delete(table: string, key: string | string[]): Promise<void> {
     return await this.database.delete(table, key);
   }
 
+  /**
+   * Clears all entries in a table.
+   * @param table - The table name.
+   */
   async clear(table: string): Promise<void> {
     return await this.database.clear(table);
   }
 
+  /**
+   * Converts a file to a table in the database.
+   * @param table - The table name.
+   * @param filePath - The file path.
+   */
   async convertFileToTable(table: string, filePath: string): Promise<void> {
     return await this.database.convertFileToTable(table, filePath);
   }
 
+  /**
+   * Converts a table to a file.
+   * @param table - The table name.
+   * @param filePath - The file path.
+   */
   async convertTableToFile(table: string, filePath: string): Promise<void> {
     return await this.database.convertTableToFile(table, filePath);
   }
 
+  /**
+   * Pings the database.
+   * @returns The ping time in milliseconds.
+   */
   async ping(): Promise<number> {
     return await this.database.ping();
   }
 
+  /**
+   * Connects to the database.
+   */
   async connect(): Promise<void> {
     return await this.database.connect();
   }
 
+  /**
+   * Checks if a table exists.
+   * @param table - The table name.
+   * @returns A boolean indicating if the table exists.
+   */
   hasTable(table: string): boolean {
     return this.tables.indexOf(table) !== -1;
   }
 
+  /**
+   * Gets the default value for a variable.
+   * @param vars - The variable name.
+   * @param table - The table name.
+   * @returns The default value of the variable.
+   */
   defaulValue(vars: string, table: string): any {
     return this.collection.get(`${vars}_${table}`);
   }
 
+  /**
+   * Sets variables in the specified tables.
+   * @param options - The variables to set.
+   * @param tables - The table or tables to set the variables in.
+   */
   async variables(
     options: { [key: string]: any },
     tables: string | string[] = this.tables[0],
