@@ -1,9 +1,9 @@
 import type { IEventDataMap } from "../typing";
 import type { AoiDB } from "../classes/AoiDB";
+import { getObjectKey } from "@aoitelegram/util";
 import {
   ArgsType,
   AoiFunction,
-  getObjectKey,
   type AoiClient,
 } from "aoitelegram";
 

@@ -1,10 +1,10 @@
+import { getObjectKey } from "@aoitelegram/util";
 import { Collection } from "@telegram.ts/collection";
 import { setTimeout, clearTimeout, type Timeout } from "long-timeout";
 import {
   ArgsType,
   AoiFunction,
   AoijsTypeError,
-  getObjectKey,
   type AoiClient,
   type CommandData,
 } from "aoitelegram";
